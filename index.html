@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FUSION — Assignment 2 Coding Edition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Outfit:wght@300;400;500;600;700;900&display=swap" rel="stylesheet">
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, get, remove, query, orderByKey, startAt } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ── Firebase config (fusion-assignment-2) ──
+  const firebaseConfig = {
+    apiKey:            "AIzaSyANDY5SKlrL0Pc1EC7oc7D8uzvaUg10Wuo",
+    authDomain:        "fusion-assignment-2.firebaseapp.com",
+    databaseURL:       "https://fusion-assignment-2-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "fusion-assignment-2",
+    storageBucket:     "fusion-assignment-2.firebasestorage.app",
+    messagingSenderId: "799157244257",
+    appId:             "1:799157244257:web:b173a970f54bb80924b520",
+    measurementId:     "G-SZQ5K79RTM"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // Expose Firebase helpers on window so the rest of the script can use them
+  window._fb = { db, ref, set, get, remove };
+  window._fbReady = true;
+  document.dispatchEvent(new Event('fb-ready'));
+</script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --void: #07070f;
+  --deep: #0d0c1e;
+  --surface: #12111f;
+  --surface2: #1a1929;
+  --surface3: #222136;
+  --border: rgba(130,120,255,0.15);
+  --border2: rgba(130,120,255,0.08);
+  --purple: #7c6ff7;
+  --purple2: #534AB7;
+  --purple3: #a99ef9;
+  --purple-glow: rgba(124,111,247,0.4);
+  --teal: #00d4aa;
+  --teal-dim: rgba(0,212,170,0.15);
+  --amber: #f0a030;
+  --amber-dim: rgba(240,160,48,0.15);
+  --red: #f06060;
+  --red-dim: rgba(240,96,96,0.15);
+  --text: #e8e7f8;
+  --text2: #9896c8;
+  --text3: #5f5e8a;
+  --font-display: 'Outfit', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --r: 10px;
+  --r2: 16px;
+  --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+}
+
+html { font-size: 16px; }
+body {
+  font-family: var(--font-display);
+  background: var(--void);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ═══════════════════════════════════════
+   INTRO OVERLAY
+═══════════════════════════════════════ */
+#intro {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--void);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+}
+
+.intro-grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(124,111,247,0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,111,247,0.07) 1px, transparent 1px);
+  background-size: 48px 48px;
+  animation: gridAppear 1s ease forwards;
+  opacity: 0;
+}
+@keyframes gridAppear { to { opacity: 1; } }
+
+.intro-orb {
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,111,247,0.22) 0%, transparent 65%);
+  animation: orbBreath 3s ease-in-out infinite alternate;
+}
+@keyframes orbBreath {
+  from { transform: scale(0.8); opacity: 0.5; }
+  to   { transform: scale(1.15); opacity: 1; }
+}
+
+.intro-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(124,111,247,0.2);
+  animation: ringExpand var(--rd) ease-out var(--rdelay) infinite;
+  opacity: 0;
+}
+@keyframes ringExpand {
+  0%   { transform: scale(0.2); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+.intro-scan {
+  position: absolute; left: 0; right: 0; height: 2px; top: 0;
+  background: linear-gradient(90deg, transparent 0%, var(--purple) 30%, var(--purple3) 50%, var(--purple) 70%, transparent 100%);
+  animation: scanLine 1.4s ease-in-out forwards;
+  box-shadow: 0 0 20px var(--purple-glow);
+  opacity: 0;
+}
+@keyframes scanLine {
+  0%   { top: 0%; opacity: 0; }
+  8%   { opacity: 1; }
+  100% { top: 100%; opacity: 0.2; }
+}
+
+.intro-particles { position: absolute; inset: 0; pointer-events: none; }
+.p-dot {
+  position: absolute; border-radius: 50%;
+  background: var(--purple3); opacity: 0;
+  animation: pdot var(--pd) ease-out var(--pdelay) forwards;
+}
+@keyframes pdot {
+  0%  { opacity: 0; transform: translateY(0) scale(0); }
+  20% { opacity: 0.9; transform: translateY(-30px) scale(1); }
+  100%{ opacity: 0; transform: translateY(-140px) scale(0.3); }
+}
+
+.intro-wordmark {
+  position: relative; z-index: 2;
+  display: flex; align-items: baseline; gap: 4px;
+}
+.intro-letter {
+  font-family: var(--font-display);
+  font-size: clamp(60px, 15vw, 110px);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  color: transparent;
+  background: linear-gradient(140deg, #fff 0%, var(--purple3) 45%, var(--purple2) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  opacity: 0; transform: translateY(50px) rotateX(40deg);
+  animation: liftIn 0.55s cubic-bezier(0.34,1.56,0.64,1) var(--ld) forwards;
+  filter: drop-shadow(0 0 30px rgba(124,111,247,0.7));
+  transform-origin: bottom center;
+}
+@keyframes liftIn {
+  to { opacity: 1; transform: translateY(0) rotateX(0deg); }
+}
+
+.intro-beam {
+  position: relative; z-index: 2;
+  margin-top: 20px; height: 2px; width: 0;
+  background: linear-gradient(90deg, transparent, var(--purple2), var(--purple3), var(--purple2), transparent);
+  border-radius: 2px;
+  animation: beamGrow 0.8s cubic-bezier(0.22,1,0.36,1) 0.95s forwards;
+  box-shadow: 0 0 20px var(--purple-glow);
+}
+@keyframes beamGrow { to { width: clamp(240px, 65vw, 520px); } }
+
+.intro-label {
+  position: relative; z-index: 2; margin-top: 18px;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 2vw, 13px);
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--purple3); opacity: 0;
+  animation: fadeUp 0.6s ease 1.15s forwards;
+}
+.intro-sub {
+  position: relative; z-index: 2; margin-top: 10px;
+  font-size: clamp(11px, 2.2vw, 14px);
+  letter-spacing: 0.06em; color: var(--text3);
+  opacity: 0; animation: fadeUp 0.6s ease 1.35s forwards;
+}
+@keyframes fadeUp { to { opacity: 1; } }
+
+#intro.outro {
+  animation: introExit 0.7s cubic-bezier(0.4,0,1,1) forwards;
+}
+@keyframes introExit {
+  0%  { opacity: 1; transform: scale(1); }
+  55% { opacity: 1; transform: scale(1.04); }
+  100%{ opacity: 0; transform: scale(1.08); pointer-events: none; }
+}
+
+/* ═══════════════════════════════════════
+   LOGIN SCREEN
+═══════════════════════════════════════ */
+#login-screen {
+  position: fixed; inset: 0; z-index: 8888;
+  background: var(--deep);
+  display: none;
+  flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 24px;
+}
+#login-screen.show { display: flex; }
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 40px 36px;
+  width: 100%; max-width: 420px;
+  text-align: center;
+  box-shadow: 0 0 80px rgba(124,111,247,0.12), 0 0 0 1px var(--border2);
+  animation: cardIn 0.5s cubic-bezier(0.34,1.3,0.64,1) forwards;
+}
+@keyframes cardIn {
+  from { transform: scale(0.88) translateY(20px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.login-logo {
+  font-family: var(--font-display);
+  font-size: 34px; font-weight: 900;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #fff 0%, var(--purple3) 50%, var(--purple2) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 0 20px rgba(124,111,247,0.5));
+}
+.login-sub {
+  font-size: 13px; color: var(--text3);
+  letter-spacing: 0.05em; margin-bottom: 32px;
+  font-family: var(--font-mono);
+}
+.login-field-label {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text3);
+  text-align: left; margin-bottom: 8px;
+}
+.login-input {
+  width: 100%; padding: 13px 16px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--r); color: var(--text);
+  font-family: var(--font-mono); font-size: 14px;
+  outline: none; transition: border-color var(--transition), box-shadow var(--transition);
+  margin-bottom: 20px;
+}
+.login-input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(124,111,247,0.15);
+}
+.login-input::placeholder { color: var(--text3); }
+
+.login-btn {
+  width: 100%; padding: 14px;
+  background: var(--purple2); border: none;
+  border-radius: var(--r); color: #fff;
+  font-family: var(--font-display); font-size: 15px; font-weight: 700;
+  cursor: pointer; letter-spacing: 0.03em;
+  transition: background var(--transition), transform 0.1s, box-shadow var(--transition);
+  box-shadow: 0 4px 24px rgba(83,74,183,0.4);
+}
+.login-btn:hover { background: var(--purple); box-shadow: 0 6px 32px rgba(124,111,247,0.5); }
+.login-btn:active { transform: scale(0.98); }
+
+.login-recent {
+  margin-top: 20px; font-size: 12px; color: var(--text3);
+}
+.login-recent-list {
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+  margin-top: 10px;
+}
+.recent-chip {
+  padding: 5px 12px; background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px; font-size: 12px; color: var(--text2);
+  cursor: pointer; transition: all var(--transition);
+  font-family: var(--font-mono);
+}
+.recent-chip:hover { background: var(--surface3); border-color: var(--purple); color: var(--purple3); }
+
+/* ═══════════════════════════════════════
+   MAIN APP
+═══════════════════════════════════════ */
+#app { display: none; flex-direction: column; min-height: 100vh; }
+#app.show { display: flex; }
+
+/* Background mesh */
+.bg-mesh {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 40% at 10% 20%, rgba(83,74,183,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 60% at 90% 80%, rgba(0,212,170,0.04) 0%, transparent 60%),
+    var(--void);
+}
+
+/* ── Topbar ─────────────────────────── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(7,7,15,0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border2);
+  padding: 0 24px;
+  display: flex; align-items: center; gap: 16px; height: 56px;
+}
+.topbar-logo {
+  font-family: var(--font-display); font-weight: 900; font-size: 20px;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #fff, var(--purple3));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  flex-shrink: 0;
+}
+.topbar-badge {
+  padding: 3px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+  font-family: var(--font-mono);
+}
+.tb-purple { background: rgba(124,111,247,0.15); color: var(--purple3); border: 1px solid rgba(124,111,247,0.25); }
+.tb-teal   { background: var(--teal-dim); color: var(--teal); border: 1px solid rgba(0,212,170,0.25); }
+.tb-amber  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(240,160,48,0.25); }
+
+.topbar-spacer { flex: 1; }
+
+.user-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 999px;
+  cursor: pointer; transition: all var(--transition);
+}
+.user-pill:hover { border-color: var(--purple); background: var(--surface3); }
+.user-avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple2), var(--purple3));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+.user-name { font-size: 13px; font-weight: 600; color: var(--text2); }
+
+.submissions-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 14px; background: transparent;
+  border: 1px solid var(--border); border-radius: 999px;
+  cursor: pointer; transition: all var(--transition);
+  font-family: var(--font-display); font-size: 13px;
+  font-weight: 500; color: var(--text3);
+}
+.submissions-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-dim); }
+
+/* ── Layout ─────────────────────────── */
+.main-layout {
+  flex: 1; display: grid;
+  grid-template-columns: 260px 1fr;
+  position: relative; z-index: 1;
+}
+
+/* ── Sidebar ─────────────────────────── */
+.sidebar {
+  border-right: 1px solid var(--border2);
+  padding: 20px 0;
+  overflow-y: auto;
+  position: sticky; top: 56px;
+  height: calc(100vh - 56px);
+}
+
+.sidebar-section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text3);
+  padding: 0 20px; margin-bottom: 6px; margin-top: 16px;
+}
+.sidebar-section-label:first-child { margin-top: 0; }
+
+.sidebar-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 20px;
+  cursor: pointer; transition: all var(--transition);
+  border-left: 2px solid transparent;
+  position: relative;
+}
+.sidebar-item:hover { background: rgba(124,111,247,0.06); }
+.sidebar-item.active {
+  background: rgba(124,111,247,0.1);
+  border-left-color: var(--purple);
+}
+
+.si-num {
+  font-family: var(--font-mono); font-size: 10px;
+  font-weight: 700; color: var(--text3);
+  width: 20px; flex-shrink: 0;
+}
+.sidebar-item.active .si-num { color: var(--purple3); }
+
+.si-title {
+  font-size: 12.5px; font-weight: 500; color: var(--text2);
+  line-height: 1.35; flex: 1;
+}
+.sidebar-item.active .si-title { color: var(--text); }
+
+.si-status {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--surface3); flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.si-status.submitted { background: var(--teal); border-color: var(--teal); box-shadow: 0 0 6px var(--teal); }
+.si-status.draft { background: var(--amber); border-color: var(--amber); }
+
+/* ── Main content ─────────────────────── */
+.main-content {
+  padding: 28px 32px;
+  max-width: 900px;
+  width: 100%;
+}
+
+/* ── Question Header ──────────────────── */
+.q-header {
+  margin-bottom: 24px;
+  animation: contentIn 0.3s ease forwards;
+}
+@keyframes contentIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.q-eyebrow {
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text3); margin-bottom: 10px;
+}
+
+.q-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.q-num-badge {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+  padding: 4px 12px; background: var(--purple2);
+  border-radius: 999px; color: #fff; flex-shrink: 0;
+}
+.q-title {
+  font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text); flex: 1;
+}
+.q-marks {
+  font-family: var(--font-mono); font-size: 12px;
+  padding: 4px 12px; background: rgba(124,111,247,0.12);
+  border: 1px solid rgba(124,111,247,0.25);
+  border-radius: 999px; color: var(--purple3);
+}
+
+.q-desc {
+  font-size: 14px; line-height: 1.7; color: var(--text2);
+  margin-bottom: 20px;
+}
+
+/* ── Cards ────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--r2);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border2);
+  background: var(--surface2);
+}
+.card-icon { font-size: 14px; }
+.card-title {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--text3);
+}
+
+/* ── Starter code ─────────────────────── */
+.starter-code {
+  font-family: var(--font-mono); font-size: 12.5px;
+  line-height: 1.75; padding: 16px 18px;
+  color: #c8c4f0; white-space: pre; overflow-x: auto;
+  background: #0a0918;
+  border-bottom: 1px solid var(--border2);
+}
+
+/* ── Tasks ────────────────────────────── */
+.task-list { padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.task-item { display: flex; gap: 12px; align-items: flex-start; }
+.task-num {
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--purple2); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.task-text { font-size: 13.5px; color: var(--text2); line-height: 1.65; }
+
+/* ── Hint ─────────────────────────────── */
+.hint-box {
+  background: var(--amber-dim);
+  border-left: 3px solid var(--amber);
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 12px 16px;
+  font-size: 13px; color: #d4903a; line-height: 1.65;
+}
+.deliverable-box {
+  background: var(--teal-dim);
+  border-left: 3px solid var(--teal);
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 12px 16px;
+  font-size: 13px; color: var(--teal); line-height: 1.65;
+}
+
+/* ── Code Editor ──────────────────────── */
+.editor-container {
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r2);
+  overflow: hidden;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.editor-container:focus-within {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(124,111,247,0.12);
+}
+
+.editor-topbar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border2);
+}
+.editor-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.ed1 { background: #f06060; }
+.ed2 { background: var(--amber); }
+.ed3 { background: var(--teal); }
+.editor-filename {
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--text3); margin-left: 4px; flex: 1;
+}
+.editor-lang {
+  font-family: var(--font-mono); font-size: 10px;
+  color: var(--purple3); letter-spacing: 0.06em;
+}
+
+.code-editor {
+  width: 100%; min-height: 280px;
+  background: #070714; color: #c8c4f0;
+  border: none; outline: none; resize: vertical;
+  font-family: var(--font-mono); font-size: 13px;
+  line-height: 1.75; padding: 16px 18px;
+  tab-size: 4; white-space: pre;
+  overflow-wrap: normal; overflow-x: auto;
+  display: block;
+}
+.code-editor::placeholder { color: var(--text3); }
+
+/* ── Submit row ───────────────────────── */
+.submit-row {
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap;
+}
+
+.submit-btn {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 24px; border: none; border-radius: var(--r);
+  background: var(--purple2); color: #fff;
+  font-family: var(--font-display); font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all var(--transition);
+  box-shadow: 0 4px 20px rgba(83,74,183,0.35);
+}
+.submit-btn:hover {
+  background: var(--purple);
+  box-shadow: 0 6px 28px rgba(124,111,247,0.45);
+  transform: translateY(-1px);
+}
+.submit-btn:active { transform: scale(0.98) translateY(0); }
+.submit-btn.success { background: #1a6e58; box-shadow: 0 4px 20px rgba(0,212,170,0.3); }
+
+.save-draft-btn {
+  padding: 12px 20px; border-radius: var(--r);
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text2); font-family: var(--font-display);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: all var(--transition);
+}
+.save-draft-btn:hover { border-color: var(--amber); color: var(--amber); background: var(--amber-dim); }
+
+.submit-status {
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--text3); flex: 1;
+}
+.submit-status.ok { color: var(--teal); }
+
+/* ── Progress bar ─────────────────────── */
+.prog-wrap {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: rgba(7,7,15,0.9); backdrop-filter: blur(16px);
+  border-top: 1px solid var(--border2);
+  padding: 12px 24px;
+  display: flex; align-items: center; gap: 16px;
+}
+.prog-label {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text3); flex-shrink: 0;
+}
+.prog-bar { flex: 1; display: flex; gap: 3px; }
+.prog-seg {
+  flex: 1; height: 4px; border-radius: 2px;
+  background: var(--surface3); cursor: pointer;
+  transition: background var(--transition), transform 0.15s;
+}
+.prog-seg:hover { transform: scaleY(2); }
+.prog-seg.done { background: var(--teal); }
+.prog-seg.active { background: var(--purple); }
+.prog-seg.draft { background: var(--amber); }
+.prog-count {
+  font-family: var(--font-mono); font-size: 11px;
+  color: var(--text3); flex-shrink: 0;
+}
+
+/* ── Nav btns ─────────────────────────── */
+.nav-row {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 20px; margin-bottom: 80px; padding-top: 8px;
+  border-top: 1px solid var(--border2);
+}
+.nav-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 20px; border-radius: var(--r);
+  border: 1px solid var(--border); background: var(--surface);
+  color: var(--text2); font-family: var(--font-display);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+  transition: all var(--transition);
+}
+.nav-btn:hover:not(:disabled) { border-color: var(--purple); color: var(--purple3); background: rgba(124,111,247,0.08); }
+.nav-btn:disabled { opacity: 0.3; cursor: default; }
+.nav-btn.next-q { background: var(--purple2); border-color: var(--purple2); color: #fff; }
+.nav-btn.next-q:hover:not(:disabled) { background: var(--purple); border-color: var(--purple); }
+.nav-counter { flex: 1; text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--text3); }
+
+/* ═══════════════════════════════════════
+   SUBMISSIONS PANEL
+═══════════════════════════════════════ */
+#submissions-panel {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(7,7,15,0.85); backdrop-filter: blur(8px);
+  display: none; align-items: center; justify-content: center;
+  padding: 24px;
+}
+#submissions-panel.show { display: flex; }
+
+.panel-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  width: 100%; max-width: 780px;
+  max-height: 85vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 0 80px rgba(0,0,0,0.6);
+  animation: panelIn 0.35s cubic-bezier(0.34,1.3,0.64,1) forwards;
+}
+@keyframes panelIn {
+  from { transform: scale(0.92) translateY(16px); opacity: 0; }
+  to   { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.panel-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 20px 24px; border-bottom: 1px solid var(--border2);
+}
+.panel-title {
+  font-size: 18px; font-weight: 700; letter-spacing: -0.01em; flex: 1;
+}
+.panel-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--surface2); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px; color: var(--text2);
+  transition: all var(--transition);
+}
+.panel-close:hover { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+
+.panel-filters {
+  display: flex; gap: 8px; padding: 16px 24px;
+  border-bottom: 1px solid var(--border2);
+  overflow-x: auto; flex-wrap: wrap;
+}
+.filter-chip {
+  padding: 5px 14px; border-radius: 999px;
+  font-size: 12px; font-weight: 500;
+  border: 1px solid var(--border); background: transparent;
+  color: var(--text3); cursor: pointer; transition: all var(--transition);
+  white-space: nowrap; font-family: var(--font-mono);
+}
+.filter-chip:hover { border-color: var(--purple3); color: var(--purple3); }
+.filter-chip.sel { background: rgba(124,111,247,0.15); border-color: var(--purple); color: var(--purple3); }
+
+.panel-body {
+  flex: 1; overflow-y: auto; padding: 16px 24px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+
+.sub-card {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: var(--r2);
+  overflow: hidden;
+  transition: border-color var(--transition);
+}
+.sub-card:hover { border-color: var(--border); }
+
+.sub-card-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; cursor: pointer;
+}
+.sub-avatar {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--purple2), var(--teal));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.sub-meta { flex: 1; }
+.sub-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.sub-info { font-family: var(--font-mono); font-size: 11px; color: var(--text3); margin-top: 2px; }
+.sub-q-badge {
+  padding: 3px 10px; border-radius: 999px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+  background: rgba(124,111,247,0.15); color: var(--purple3);
+}
+.sub-expand { font-size: 18px; color: var(--text3); transition: transform var(--transition); }
+.sub-card.open .sub-expand { transform: rotate(180deg); }
+
+.sub-code-wrap {
+  display: none; border-top: 1px solid var(--border2);
+}
+.sub-card.open .sub-code-wrap { display: block; }
+.sub-code {
+  font-family: var(--font-mono); font-size: 12px; line-height: 1.7;
+  padding: 14px 16px; background: #070714; color: #c8c4f0;
+  white-space: pre; overflow-x: auto;
+  max-height: 280px; overflow-y: auto;
+}
+
+.empty-state {
+  text-align: center; padding: 48px 24px;
+  color: var(--text3); font-size: 14px;
+}
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+#toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px);
+  z-index: 9000; padding: 12px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px; font-weight: 600; color: var(--text);
+  box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.3,0.64,1);
+  font-family: var(--font-mono); white-space: nowrap;
+  pointer-events: none;
+}
+#toast.show {
+  opacity: 1; transform: translateX(-50%) translateY(0);
+}
+#toast.teal { border-color: var(--teal); color: var(--teal); }
+#toast.amber { border-color: var(--amber); color: var(--amber); }
+
+/* ═══════════════════════════════════════
+   SCROLLBAR
+═══════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+/* ── Online / Offline indicator ── */
+#net-status {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+  border: 1px solid transparent;
+  transition: all 0.4s ease;
+  flex-shrink: 0;
+}
+#net-status.online  { background: rgba(0,212,170,0.12); color: var(--teal);  border-color: rgba(0,212,170,0.25); }
+#net-status.offline { background: var(--red-dim);        color: var(--red);   border-color: rgba(240,96,96,0.3);  }
+#net-status .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: currentColor;
+}
+#net-status.online .dot { animation: pulse-dot 1.6s ease infinite; }
+@keyframes pulse-dot {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:0.4; transform:scale(0.7); }
+}
+
+/* ── Sync queue badge ── */
+#sync-badge {
+  display: none;
+  padding: 3px 8px; border-radius: 999px;
+  background: var(--amber-dim); color: var(--amber);
+  border: 1px solid rgba(240,160,48,0.3);
+  font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+  cursor: pointer;
+}
+#sync-badge.show { display: inline-flex; align-items: center; gap: 4px; }
+
+.submit-all-btn {
+  background: linear-gradient(135deg, var(--teal), #00a882) !important;
+  color: #fff !important;
+  border-color: var(--teal) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 18px rgba(0,212,170,0.35) !important;
+}
+.submit-all-btn:hover {
+  background: linear-gradient(135deg, #00e8bb, var(--teal)) !important;
+  box-shadow: 0 6px 26px rgba(0,212,170,0.55) !important;
+  transform: translateY(-1px);
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .main-content { padding: 20px 16px; }
+  .topbar { padding: 0 14px; gap: 10px; }
+  .topbar-badge { display: none; }
+  .submissions-btn span { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════ INTRO ════════ -->
+<div id="intro">
+  <div class="intro-grid"></div>
+  <div class="intro-orb"></div>
+  <div class="intro-scan"></div>
+  <div class="intro-particles" id="introParticles"></div>
+  <div class="intro-ring" style="width:300px;height:300px;--rd:3s;--rdelay:0.5s;"></div>
+  <div class="intro-ring" style="width:200px;height:200px;--rd:3s;--rdelay:1.2s;"></div>
+
+  <div class="intro-wordmark" aria-label="FUSION">
+    <span class="intro-letter" style="--ld:0.2s">F</span>
+    <span class="intro-letter" style="--ld:0.32s">U</span>
+    <span class="intro-letter" style="--ld:0.44s">S</span>
+    <span class="intro-letter" style="--ld:0.56s">I</span>
+    <span class="intro-letter" style="--ld:0.68s">O</span>
+    <span class="intro-letter" style="--ld:0.80s">N</span>
+  </div>
+
+  <div class="intro-beam"></div>
+  <div class="intro-label">Multimodal Deep Learning Framework</div>
+  <div class="intro-sub">Assignment 2 — Coding Edition &nbsp;·&nbsp; 50 Marks &nbsp;·&nbsp; Python + PyTorch</div>
+</div>
+
+<!-- ════════ LOGIN ════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">FUSION</div>
+    <div class="login-sub">Assignment 2 · Coding Edition</div>
+    <div class="login-field-label">Your Name</div>
+    <input type="text" id="nameInput" class="login-input" placeholder="e.g. Priya Sharma" autocomplete="off" />
+    <button class="login-btn" onclick="handleLogin()">&#9654;&nbsp; Enter Lab</button>
+    <div class="login-recent" id="recentWrap" style="display:none">
+      <div style="margin-bottom:4px">Recent users</div>
+      <div class="login-recent-list" id="recentList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ MAIN APP ════════ -->
+<div id="app">
+  <div class="bg-mesh"></div>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-logo">FUSION</div>
+    <span class="topbar-badge tb-purple">Assignment 2</span>
+    <span class="topbar-badge tb-teal">Coding Edition</span>
+    <span class="topbar-badge tb-amber">50 marks</span>
+    <div class="topbar-spacer"></div>
+    <div id="net-status" class="online"><div class="dot"></div><span id="net-label">Online</span></div>
+    <div id="sync-badge" onclick="flushQueue()">⬆ Sync pending</div>
+    <button class="submissions-btn" onclick="openPanel()">
+      📋 <span>All Submissions</span>
+    </button>
+    <div class="user-pill" onclick="logout()">
+      <div class="user-avatar" id="topAvatar"></div>
+      <div class="user-name" id="topName"></div>
+    </div>
+  </div>
+
+  <!-- Layout -->
+  <div class="main-layout">
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar"></div>
+
+    <!-- Content -->
+    <div class="main-content" id="mainContent"></div>
+  </div>
+
+  <!-- Progress bar -->
+  <div class="prog-wrap">
+    <div class="prog-label" id="progLabel">Q1</div>
+    <div class="prog-bar" id="progBar"></div>
+    <div class="prog-count" id="progCount">0/10</div>
+  </div>
+</div>
+
+<!-- ════════ SUBMISSIONS PANEL ════════ -->
+<div id="submissions-panel" onclick="panelBgClick(event)">
+  <div class="panel-card">
+    <div class="panel-header">
+      <div class="panel-title">All Submissions</div>
+      <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-filters" id="panelFilters"></div>
+    <div class="panel-body" id="panelBody"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+/* ════════════════════════════════════════
+   DATA
+════════════════════════════════════════ */
+const Q = [
+  {
+    sec:"A", num:"Q1", marks:5,
+    title:"Visualising translation equivariance in CNNs",
+    desc:"Inductive bias in CNNs comes from weight sharing across spatial positions. You will empirically verify translation equivariance by passing a shifted image through a ResNet layer and comparing the output feature maps.",
+    setup:`import torch, torchvision.models as m
+import torch.nn.functional as F
+from torchvision import transforms
+from PIL import Image
+
+resnet = m.resnet50(weights='DEFAULT')
+# Use only the first conv block
+encoder = torch.nn.Sequential(*list(resnet.children())[:4])
+encoder.eval()
+
+preprocess = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+])`,
+    tasks:[
+      "Load any image (or generate a random tensor of shape [1,3,224,224]) and pass it through the encoder to get feature map F1.",
+      "Shift the input image by 8 pixels horizontally using torch.roll() to produce a shifted input. Pass through the same encoder to get F2.",
+      "Compute the mean absolute difference between F1 and a correspondingly-shifted version of F2. Print the result.",
+      "Repeat the experiment with a ViT patch embedding layer. Does ViT preserve equivariance in the same way? Print and compare both differences."
+    ],
+    hint:"For ViT, use timm.create_model('vit_base_patch16_224', pretrained=False).patch_embed to isolate just the patch embedding. A truly equivariant layer should give a near-zero MAD after compensating for the shift.",
+    deliverable:"Print the MAD values for both CNN and ViT. Add a 2–3 line comment explaining what the difference tells you about inductive bias."
+  },
+  {
+    sec:"A", num:"Q2", marks:5,
+    title:"Receptive field growth — ResNet vs ConvNeXt",
+    desc:"ConvNeXt replaces small stacked 3×3 kernels with a 7×7 depthwise conv per stage, changing how quickly the effective receptive field grows. Compute the theoretical receptive field after each stage for both architectures.",
+    setup:`def receptive_field(layers):
+    """
+    layers: list of (kernel_size, stride, dilation) tuples
+    Returns the effective receptive field size.
+    """
+    rf = 1
+    total_stride = 1
+    for k, s, d in layers:
+        eff_k = d * (k - 1) + 1
+        rf = rf + (eff_k - 1) * total_stride
+        total_stride *= s
+    return rf`,
+    tasks:[
+      "Define the layer specs for a ResNet-50 stem + 4 stages (kernel sizes 7,3,3,3,3 with strides 2,1,2,2,2).",
+      "Define the layer specs for a ConvNeXt-T stem + 4 stages (stem: 4×4 stride-4 patchify; each stage: 7×7 depthwise conv, stride 2 between stages).",
+      "Call receptive_field() after each stage for both models and print the values side-by-side.",
+      "Write a comment: given that fusion layers receive final-stage features, what does a larger receptive field mean for the semantic richness of each token?"
+    ],
+    hint:"ConvNeXt's 4×4 stride-4 stem means the very first layer sees a 4×4 patch. The depthwise 7×7 convs grow the field much faster than ResNet's stacked 3×3s.",
+    deliverable:"A printed table (Stage 1–4, ResNet RF, ConvNeXt RF) plus your interpretive comment."
+  },
+  {
+    sec:"B", num:"Q3", marks:5,
+    title:"Patch tokenisation and the CLS token",
+    desc:"Manually implement a simplified patch tokeniser, positional encoding, and observe how the CLS token aggregates information differently from global average pooling.",
+    setup:`import torch
+import torch.nn as nn
+
+class SimplePatchEmbed(nn.Module):
+    def __init__(self, img_size=224, patch_size=16, embed_dim=256):
+        super().__init__()
+        self.n_patches = (img_size // patch_size) ** 2
+        self.proj = nn.Conv2d(3, embed_dim,
+                              kernel_size=patch_size,
+                              stride=patch_size)
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_embed = nn.Parameter(
+            torch.zeros(1, self.n_patches + 1, embed_dim))
+
+    def forward(self, x):
+        # TODO: implement this
+        pass`,
+    tasks:[
+      "Complete the forward() method: project x with self.proj, flatten spatial dims to get [B, N, D], prepend cls_token, add pos_embed, return the full sequence.",
+      "Instantiate SimplePatchEmbed and pass a random [1, 3, 224, 224] tensor through it. Print the output shape.",
+      "Extract the CLS token (index 0) and compute global average pooling over the patch tokens (indices 1:). Print the L2 distance between the two vectors.",
+      "Repeat with pos_embed zeroed out. Does the CLS token change? Print and compare. Add a comment explaining why positional encodings matter."
+    ],
+    hint:"Without positional encodings, patch tokens are permutation-invariant — the model cannot distinguish 'top-left' from 'bottom-right'. The CLS token gathers global context through self-attention, which is fundamentally different from spatial averaging.",
+    deliverable:"Output shapes, L2 distances (with and without pos_embed), and your explanatory comment."
+  },
+  {
+    sec:"B", num:"Q4", marks:5,
+    title:"Hierarchical features: Swin-style window partitioning",
+    desc:"Swin Transformer computes attention within local windows and shifts them between layers. Implement the window partition and reversal functions used in Swin.",
+    setup:`import torch
+
+def window_partition(x, window_size):
+    """
+    x: [B, H, W, C]
+    Returns: [num_windows*B, window_size, window_size, C]
+    """
+    pass  # TODO
+
+def window_reverse(windows, window_size, H, W):
+    """
+    windows: [num_windows*B, window_size, window_size, C]
+    Returns: [B, H, W, C]
+    """
+    pass  # TODO`,
+    tasks:[
+      "Implement window_partition() by reshaping x into non-overlapping windows of size window_size × window_size.",
+      "Implement window_reverse() to reconstruct the original spatial tensor.",
+      "Create a feature map x of shape [1, 56, 56, 96] (Swin-T stage-1 resolution) and run window_partition with window_size=7. Print output shape and verify num_windows = (56/7)² = 64.",
+      "Run window_reverse and verify it matches original x. Write a comment: how does this local attention pattern give Swin multi-scale properties compared to plain ViT?"
+    ],
+    hint:"Plain ViT's attention is global from layer 1 — expensive at high resolution. Swin's windowed attention is O(n·w²) not O(n²), enabling larger feature maps that preserve fine-grained spatial structure needed for dense fusion tasks.",
+    deliverable:"Printed shapes at each step, an assert that window_reverse output equals original x, and your comment."
+  },
+  {
+    sec:"C", num:"Q5", marks:5,
+    title:"Comparing pre-training objectives — probing representations",
+    desc:"Pre-training objective shapes what the encoder learns. Use lightweight linear probing to compare how well a supervised vs self-supervised model's frozen features cluster on a small dataset.",
+    setup:`import torch, torch.nn as nn
+from torchvision import datasets, transforms, models
+
+# Supervised baseline
+sup_model = models.resnet18(weights='DEFAULT')
+sup_encoder = nn.Sequential(*list(sup_model.children())[:-1])
+
+# Simulated self-supervised model (ResNet18 with random weights
+# to simulate training without label signal)
+ssl_encoder = nn.Sequential(
+    *list(models.resnet18(weights=None).children())[:-1])
+
+# Dataset: CIFAR-10
+tfm = transforms.Compose([
+    transforms.Resize(224), transforms.ToTensor()])`,
+    tasks:[
+      "Extract features from both encoders on 200 randomly selected CIFAR-10 images (no training). Flatten the pooled outputs to [N, 512].",
+      "Train a simple LogisticRegression (from sklearn) on 70% of the features, test on 30%. Report accuracy for both encoders.",
+      "Compute and print the average pairwise cosine similarity between same-class pairs vs different-class pairs for both encoders.",
+      "Add a comment block (4–5 lines) explaining why a CLIP-Vision encoder would outperform both on a vision-language retrieval task — even if its classification accuracy is lower."
+    ],
+    hint:"The pre-training objective determines the geometry of representation space. Supervised encoders cluster classes well but have no cross-modal structure. CLIP encoders align visual and textual semantics in the same space, which matters for retrieval but not classification.",
+    deliverable:"Accuracy table, cosine similarity comparison, and your comment block."
+  },
+  {
+    sec:"C", num:"Q6", marks:5,
+    title:"Emergent structure in self-supervised features",
+    desc:"DINOv2 and similar self-supervised models produce representations with emergent semantic structure. Visualise this using PCA on patch tokens.",
+    setup:`import torch
+import numpy as np
+import matplotlib.pyplot as plt
+
+torch.manual_seed(42)
+# Simulate semantic clustering: 4 regions with distinct clusters
+# Shape: [196, 384] -- 14x14 patches, dim 384
+patch_features = torch.zeros(196, 384)
+for i in range(4):
+    idx = range(i*49, (i+1)*49)
+    patch_features[idx] = torch.randn(49, 384) * 0.3
+    patch_features[idx, i*96:(i+1)*96] += 2.0  # region signal`,
+    tasks:[
+      "Apply PCA (sklearn.decomposition.PCA, n_components=3) to patch_features to reduce to 3 dimensions.",
+      "Reshape the 3 PCA components to [14, 14, 3], normalise to [0,1], and display as an RGB image using matplotlib. Each spatial position is coloured by its dominant feature direction.",
+      "Repeat the same PCA visualisation but first randomly shuffle the rows of patch_features (destroying spatial structure). Show both results side by side.",
+      "Write a comment explaining what the difference between the two visualisations reveals about 'emergent semantic structure' and why it matters when DINOv2 features are used in a fusion pipeline."
+    ],
+    hint:"The structured visualisation should show coherent colour regions for the 4 simulated object areas. The shuffled version should be uniform noise. This mirrors how real DINO features naturally segment objects without segmentation supervision.",
+    deliverable:"Side-by-side matplotlib figure saved as pca_compare.png, and your comment."
+  },
+  {
+    sec:"D", num:"Q7", marks:5,
+    title:"Output representation shapes and information content",
+    desc:"The three output types differ not just in shape but in what spatial information they preserve. Measure spatial information loss across pooling operations.",
+    setup:`import torch
+import torch.nn.functional as F
+
+torch.manual_seed(0)
+# CNN spatial feature map: [1, 512, 7, 7]
+spatial_map = torch.randn(1, 512, 7, 7)
+
+# ViT patch tokens: [1, 49, 512]  (7x7 patches)
+patch_tokens = spatial_map.view(1, 512, 49).permute(0, 2, 1)
+
+# Global average pool
+global_vec = spatial_map.mean(dim=[2, 3])  # [1, 512]`,
+    tasks:[
+      "For each of the 49 spatial positions, compute the cosine similarity between that position's feature vector and global_vec. Print the min, max, and std of the 49 similarity values.",
+      "Select positions 0 and 48 (top-left vs bottom-right). Compute their cosine similarity. Does global_vec 'know' about this spatial relationship? Write a comment.",
+      "Simulate a simple cross-attention between q = torch.randn(1, 512) and patch_tokens as keys/values (single-head, no learned weights). Print the output shape and what it represents semantically.",
+      "Write a 3-line summary of when you would choose each representation type (spatial map, patch tokens, global vector) as input to a fusion module."
+    ],
+    hint:"The global vector loses spatial relationships by design. Cross-attention over patch tokens is what allows a text query to 'look at' specific image regions — critical for VQA and referring expression comprehension.",
+    deliverable:"Printed similarity stats, cross-attention output shape, and your 3-line summary."
+  },
+  {
+    sec:"D", num:"Q8", marks:5,
+    title:"VQA encoder comparison — spatial vs global",
+    desc:"Build a minimal VQA-style inference scaffold and demonstrate the representational difference between a pooled global vector and a patch token sequence when answering a spatial question.",
+    setup:`import torch, torch.nn as nn
+
+class MinimalVQA(nn.Module):
+    def __init__(self, img_dim, text_dim, n_answers=10):
+        super().__init__()
+        self.fusion = nn.Linear(img_dim + text_dim, 256)
+        self.head = nn.Linear(256, n_answers)
+
+    def forward(self, img_feat, text_feat):
+        x = torch.cat([img_feat, text_feat], dim=-1)
+        return self.head(F.relu(self.fusion(x)))
+
+# Two question types with same image
+q_spatial = torch.randn(1, 256)  # "What is to the left of X?"
+q_global  = torch.randn(1, 256)  # "How many objects are there?"`,
+    tasks:[
+      "Instantiate MinimalVQA with img_dim=512, text_dim=256. Pass global_vec (reshaped to [1,512]) with both q_spatial and q_global. Print the logit outputs.",
+      "Replace img_feat with the mean of the first 24 patch tokens ('left half') for q_spatial, and the mean of the last 25 tokens for q_global. Print the new logit outputs.",
+      "Measure the L2 distance between the logits from step 1 and step 2 for each question type. Which is more sensitive to spatial pooling strategy?",
+      "Write a comment (4–5 lines): why is the choice between EfficientNet+GAP and ViT patch tokens consequential for VQA — and under what dataset conditions might GAP still be acceptable?"
+    ],
+    hint:"Spatial questions require localised features — GAP destroys positional distinctions needed to answer 'what is to the left/right/above'. For questions like 'what colour is the main object?' global context may be sufficient.",
+    deliverable:"Printed logits and L2 distances, plus your comment."
+  },
+  {
+    sec:"E", num:"Q9", marks:5,
+    title:"Retrieval-oriented embedding analysis",
+    desc:"For a multimodal product search engine, embeddings must be stable, semantically rich, and cross-modal compatible. Design and test properties of a retrieval-suitable embedding space.",
+    setup:`import torch
+import torch.nn.functional as F
+
+torch.manual_seed(7)
+n = 100  # catalogue items
+
+# CLIP-like: joint vision-language space
+clip_img = F.normalize(torch.randn(n, 512), dim=1)
+clip_txt = F.normalize(clip_img + 0.1*torch.randn(n, 512), dim=1)
+
+# Supervised CNN: class-discriminative, unimodal
+sup_img = F.normalize(torch.randn(n, 512), dim=1)
+text_queries = F.normalize(torch.randn(n, 512), dim=1)`,
+    tasks:[
+      "For each encoder, compute top-1 retrieval accuracy: for each item i, find the nearest neighbour in the other modality and check if it's the correct item. Print results for CLIP and supervised.",
+      "Compute the mean cosine similarity between an item's image embedding and its text embedding for both encoders. Print and compare.",
+      "For CLIP embeddings, compute intra-class vs inter-class similarity assuming first 50 items are class A and last 50 are class B. Print the gap.",
+      "Write a comment: which encoder property matters most for large-scale ANN retrieval — and which constraint (cross-modal compatibility, stability, fine-grained distinction) is hardest to satisfy simultaneously?"
+    ],
+    hint:"Cross-modal retrieval requires image and text embeddings in compatible spaces — supervised unimodal encoders cannot do this by default. But CLIP's contrastive objective may over-smooth fine-grained visual differences (texture, colour) that matter for product search.",
+    deliverable:"Retrieval accuracy, cosine similarity table, intra/inter-class gap, and your comment."
+  },
+  {
+    sec:"E", num:"Q10", marks:5,
+    title:"CLIP cosine similarity as fusion — failure mode analysis",
+    desc:"The proposal to 'just use CLIP cosine similarity and skip fusion' is seductive but flawed. Construct three concrete failure scenarios and demonstrate them computationally.",
+    setup:`import torch
+import torch.nn.functional as F
+
+torch.manual_seed(99)
+
+def make_clip_pair(semantic_sim=0.9, n=1):
+    img = F.normalize(torch.randn(n, 512), dim=1)
+    txt = F.normalize(img * semantic_sim +
+                      (1-semantic_sim)*torch.randn(n, 512), dim=1)
+    return img, txt`,
+    tasks:[
+      "Scenario 1 — Spatial reasoning failure: Show that cosine similarity is identical for 'red ball on the left' vs 'red ball on the right' since CLIP global embeddings cannot encode position. Use make_clip_pair(semantic_sim=0.85) for both and compare.",
+      "Scenario 2 — Fine-grained attribute failure: Simulate 3 visually similar items with small perturbations. Show cosine similarity is very high (>0.95) — the model cannot distinguish them.",
+      "Scenario 3 — Compositional reasoning failure: Simulate a VQA question requiring multi-step reasoning. Show a single cosine similarity score cannot produce a spatially-grounded yes/no answer.",
+      "Write a conclusion comment (5–6 lines): for each failure scenario, state the underlying theoretical reason why CLIP's contrastive objective does not optimise for that property."
+    ],
+    hint:"CLIP is trained to align global image-text semantics. It does NOT optimise for (1) spatial position encoding, (2) fine-grained intra-class discrimination, or (3) compositional/relational reasoning. These require richer fusion mechanisms or different pre-training.",
+    deliverable:"Printed similarity scores for all 3 scenarios and your conclusion comment."
+  }
+];
+
+const secLabels = {
+  A:"Section A — CNN vs Transformer",
+  B:"Section B — Patch & Spatial",
+  C:"Section C — Pre-training Paradigms",
+  D:"Section D — Output Representations",
+  E:"Section E — Architectural Selection"
+};
+
+/* ════════════════════════════════════════
+   STORAGE ENGINE
+   Priority: Firebase (shared/online) → localStorage (offline fallback)
+   Offline writes are queued and flushed when connectivity returns.
+════════════════════════════════════════ */
+
+const LS_PREFIX   = 'fusion_a2_';
+const LS_QUEUE    = 'fusion_a2_syncq';
+
+/* ---------- localStorage helpers ---------- */
+function lsGet(key) {
+  try { return localStorage.getItem(LS_PREFIX + key); } catch { return null; }
+}
+function lsSet(key, val) {
+  try { localStorage.setItem(LS_PREFIX + key, val); return true; } catch { return false; }
+}
+function lsDel(key) {
+  try { localStorage.removeItem(LS_PREFIX + key); } catch {}
+}
+function lsKeys(prefix) {
+  const out = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith(LS_PREFIX + prefix)) {
+        out.push(k.slice(LS_PREFIX.length));
+      }
+    }
+  } catch {}
+  return out;
+}
+
+/* ---------- Sync queue (offline writes) ---------- */
+function queueLoad() {
+  try { return JSON.parse(localStorage.getItem(LS_QUEUE) || '[]'); } catch { return []; }
+}
+function queueSave(q) {
+  try { localStorage.setItem(LS_QUEUE, JSON.stringify(q)); } catch {}
+}
+function queueAdd(op) {          // op: { type:'set'|'del', key, val }
+  const q = queueLoad();
+  const existing = q.findIndex(x => x.key === op.key);
+  if (existing !== -1) q.splice(existing, 1);
+  q.push(op);
+  queueSave(q);
+  updateSyncBadge();
+}
+function updateSyncBadge() {
+  const badge = document.getElementById('sync-badge');
+  if (!badge) return;
+  const n = queueLoad().length;
+  if (n > 0) { badge.textContent = `⬆ ${n} pending`; badge.classList.add('show'); }
+  else        { badge.classList.remove('show'); }
+}
+
+/* ---------- Firebase path ---------- */
+function fbPath(key) {
+  // Flatten key to valid Firebase path: replace : and spaces
+  return key.replace(/[:.#$[\]]/g, '_');
+}
+
+/* ---------- Online / offline ---------- */
+let isOnline = navigator.onLine;
+function setOnline(val) {
+  isOnline = val;
+  const el = document.getElementById('net-status');
+  const lb = document.getElementById('net-label');
+  if (!el) return;
+  el.className = val ? 'online' : 'offline';
+  if (lb) lb.textContent = val ? 'Online' : 'Offline';
+  if (val) flushQueue();
+}
+window.addEventListener('online',  () => setOnline(true));
+window.addEventListener('offline', () => setOnline(false));
+
+/* ---------- Flush queue to Firebase ---------- */
+async function flushQueue() {
+  if (!isOnline || !window._fbReady) return;
+  const q = queueLoad();
+  if (!q.length) return;
+  const { db, ref, set, remove } = window._fb;
+  const done = [];
+  for (const op of q) {
+    try {
+      if (op.type === 'set') {
+        await set(ref(db, fbPath(op.key)), op.val);
+      } else if (op.type === 'del') {
+        await remove(ref(db, fbPath(op.key)));
+      }
+      done.push(op.key);
+    } catch (e) { /* leave in queue, retry later */ }
+  }
+  if (done.length) {
+    const remaining = q.filter(x => !done.includes(x.key));
+    queueSave(remaining);
+    updateSyncBadge();
+    if (done.length > 0) showToast(`☁ Synced ${done.length} item(s)`, 'teal');
+  }
+}
+
+/* ---------- Main storage API ---------- */
+// storageGet — tries Firebase first, falls back to localStorage
+async function storageGet(key) {
+  if (isOnline && window._fbReady) {
+    try {
+      const { db, ref, get } = window._fb;
+      const snap = await get(ref(db, fbPath(key)));
+      if (snap.exists()) {
+        const val = typeof snap.val() === 'string' ? snap.val() : JSON.stringify(snap.val());
+        lsSet(key, val);   // keep local copy fresh
+        return { value: val };
+      }
+    } catch {}
+  }
+  // Offline or Firebase failed — use localStorage
+  const val = lsGet(key);
+  return val !== null ? { value: val } : null;
+}
+
+// storageSet — writes to localStorage immediately, Firebase if online (else queues)
+async function storageSet(key, val) {
+  lsSet(key, val);
+  if (isOnline && window._fbReady) {
+    try {
+      const { db, ref, set } = window._fb;
+      await set(ref(db, fbPath(key)), val);
+      return true;
+    } catch {}
+  }
+  // Offline: queue for later
+  queueAdd({ type: 'set', key, val });
+  return true;   // local write succeeded
+}
+
+// storageDel
+async function storageDel(key) {
+  lsDel(key);
+  if (isOnline && window._fbReady) {
+    try {
+      const { db, ref, remove } = window._fb;
+      await remove(ref(db, fbPath(key)));
+      return;
+    } catch {}
+  }
+  queueAdd({ type: 'del', key });
+}
+
+// storageList — lists all keys matching prefix from BOTH localStorage and Firebase
+async function storageList(prefix) {
+  const localKeys = lsKeys(prefix);
+  if (!isOnline || !window._fbReady) return localKeys;
+  // For submissions panel we need all users' data — scan Firebase
+  // Firebase REST approach via get on root is simplest for small datasets
+  try {
+    const { db, ref, get } = window._fb;
+    const snap = await get(ref(db, '/'));
+    if (!snap.exists()) return localKeys;
+    const all = snap.val();
+    const fbKeys = Object.keys(all || {})
+      .map(k => k.replace(/_/g, ':'))   // reverse our path encoding for : only
+      .filter(k => k.startsWith(prefix));
+    // Merge and deduplicate
+    const merged = [...new Set([...localKeys, ...fbKeys])];
+    return merged;
+  } catch { return localKeys; }
+}
+
+/* ════════════════════════════════════════
+   STATE
+════════════════════════════════════════ */
+let currentUser = '';
+let currentQ = 0;
+let drafts = {}; // q index -> code text (in-memory, autosaved)
+
+/* ════════════════════════════════════════
+   INTRO
+════════════════════════════════════════ */
+(function spawnParticles() {
+  const c = document.getElementById('introParticles');
+  for (let i = 0; i < 36; i++) {
+    const p = document.createElement('div');
+    p.className = 'p-dot';
+    const sz = 2 + Math.random() * 4;
+    p.style.cssText = `
+      left:${8+Math.random()*84}%; top:${15+Math.random()*70}%;
+      width:${sz}px; height:${sz}px;
+      --pd:${1.3+Math.random()*1.5}s; --pdelay:${0.3+Math.random()*1.4}s;
+    `;
+    c.appendChild(p);
+  }
+})();
+
+setTimeout(() => {
+  const intro = document.getElementById('intro');
+  intro.classList.add('outro');
+  intro.addEventListener('animationend', () => {
+    intro.style.display = 'none';
+    showLogin();
+  }, { once: true });
+}, 2600);
+
+/* ════════════════════════════════════════
+   LOGIN
+════════════════════════════════════════ */
+async function showLogin() {
+  document.getElementById('login-screen').classList.add('show');
+  document.getElementById('nameInput').focus();
+
+  // Load recent users from localStorage (fast, no network needed)
+  const names = lsKeys('users:').map(k => k.replace('users:', '')).filter(Boolean);
+  if (names.length) {
+    const wrap = document.getElementById('recentWrap');
+    const list = document.getElementById('recentList');
+    wrap.style.display = '';
+    // Sort by most recently used (value is timestamp string)
+    names.sort((a,b) => {
+      const ta = parseInt(lsGet('users:'+a)||'0');
+      const tb = parseInt(lsGet('users:'+b)||'0');
+      return tb - ta;
+    });
+    list.innerHTML = names.slice(0,6).map(n =>
+      `<div class="recent-chip" onclick="pickName('${n.replace(/'/g,"\\'")}')">
+        ${escHtml(n)}
+      </div>`
+    ).join('');
+  }
+
+  document.getElementById('nameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleLogin();
+  });
+}
+
+function pickName(name) {
+  document.getElementById('nameInput').value = name;
+  handleLogin();
+}
+
+async function handleLogin() {
+  const raw = document.getElementById('nameInput').value.trim();
+  if (!raw) { document.getElementById('nameInput').focus(); return; }
+  currentUser = raw;
+  await storageSet('users:' + raw, Date.now().toString());
+  document.getElementById('login-screen').classList.remove('show');
+  await initApp();
+}
+
+/* ════════════════════════════════════════
+   APP INIT
+════════════════════════════════════════ */
+async function initApp() {
+  // Load user's saved drafts from localStorage (instant, offline-safe)
+  for (let i = 0; i < Q.length; i++) {
+    const key = `draft:${currentUser}:q${i}`;
+    const val = lsGet(key);
+    if (val) drafts[i] = val;
+  }
+
+  // Set user pill
+  document.getElementById('topAvatar').textContent = currentUser.charAt(0).toUpperCase();
+  document.getElementById('topName').textContent = currentUser;
+
+  document.getElementById('app').classList.add('show');
+
+  // Flush any pending offline writes
+  updateSyncBadge();
+  if (isOnline) flushQueue();
+
+  buildSidebar();
+  renderQ(0);
+}
+
+/* ════════════════════════════════════════
+   SIDEBAR
+════════════════════════════════════════ */
+function buildSidebar() {
+  const sb = document.getElementById('sidebar');
+  const secs = ['A','B','C','D','E'];
+  let html = '';
+  let lastSec = '';
+  Q.forEach((q, i) => {
+    if (q.sec !== lastSec) {
+      html += `<div class="sidebar-section-label">${secLabels[q.sec]}</div>`;
+      lastSec = q.sec;
+    }
+    html += `<div class="sidebar-item ${i===currentQ?'active':''}" id="si-${i}" onclick="renderQ(${i})">
+      <div class="si-num">${q.num}</div>
+      <div class="si-title">${q.title}</div>
+      <div class="si-status" id="sis-${i}"></div>
+    </div>`;
+  });
+  sb.innerHTML = html;
+  updateStatuses();
+}
+
+async function updateStatuses() {
+  for (let i = 0; i < Q.length; i++) {
+    const dot = document.getElementById('sis-'+i);
+    if (!dot) continue;
+    const subKey = `sub:${currentUser}:q${i}`;
+    const sub = lsGet(subKey);
+    if (sub) {
+      dot.className = 'si-status submitted';
+    } else if (drafts[i]) {
+      dot.className = 'si-status draft';
+    } else {
+      dot.className = 'si-status';
+    }
+  }
+  buildProgressBar();
+}
+
+/* ════════════════════════════════════════
+   PROGRESS BAR
+════════════════════════════════════════ */
+async function buildProgressBar() {
+  const bar = document.getElementById('progBar');
+  bar.innerHTML = '';
+  let doneCount = 0;
+  for (let i = 0; i < Q.length; i++) {
+    const seg = document.createElement('div');
+    const subKey = `sub:${currentUser}:q${i}`;
+    const sub = lsGet(subKey);
+    if (sub) { seg.className = 'prog-seg done'; doneCount++; }
+    else if (drafts[i]) seg.className = 'prog-seg draft';
+    else if (i === currentQ) seg.className = 'prog-seg active';
+    else seg.className = 'prog-seg';
+    seg.onclick = () => renderQ(i);
+    bar.appendChild(seg);
+  }
+  document.getElementById('progLabel').textContent = 'Q'+(currentQ+1);
+  document.getElementById('progCount').textContent = `${doneCount}/${Q.length}`;
+}
+
+/* ════════════════════════════════════════
+   RENDER QUESTION
+════════════════════════════════════════ */
+async function renderQ(idx) {
+  currentQ = idx;
+  const q = Q[idx];
+
+  // Update sidebar active
+  document.querySelectorAll('.sidebar-item').forEach((el,i) => {
+    el.classList.toggle('active', i === idx);
+  });
+
+  // Check existing submission
+  const subKey = `sub:${currentUser}:q${idx}`;
+  const existingSubVal = lsGet(subKey);
+  const existingSub = existingSubVal ? { value: existingSubVal } : null;
+  const existingCode = existingSub ? existingSub.value : (drafts[idx] || '');
+
+  const tasksHtml = q.tasks.map((t,i) =>
+    `<div class="task-item">
+      <div class="task-num">${i+1}</div>
+      <div class="task-text">${escHtml(t)}</div>
+    </div>`
+  ).join('');
+
+  const isSubmitted = !!existingSub;
+  const subMeta = isSubmitted
+    ? `<span class="submit-status ok">✓ Submitted &nbsp;·&nbsp; ${formatTime(JSON.parse(existingSub.value).ts)}</span>`
+    : `<span class="submit-status" id="statusText"></span>`;
+
+  document.getElementById('mainContent').innerHTML = `
+    <div class="q-header" id="qHeader">
+      <div class="q-eyebrow">${secLabels[q.sec]}</div>
+      <div class="q-title-row">
+        <span class="q-num-badge">${q.num}</span>
+        <span class="q-title">${escHtml(q.title)}</span>
+        <span class="q-marks">${q.marks} marks</span>
+      </div>
+      <p class="q-desc">${escHtml(q.desc)}</p>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">📦</span>
+        <span class="card-title">Starter Code</span>
+      </div>
+      <div class="starter-code">${escCode(q.setup)}</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-icon">📋</span>
+        <span class="card-title">Tasks</span>
+      </div>
+      <div class="task-list">${tasksHtml}</div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+      <div class="hint-box" style="flex:1;min-width:200px">💡 ${escHtml(q.hint)}</div>
+      <div class="deliverable-box" style="flex:1;min-width:200px">✔ <strong>Deliverable:</strong> ${escHtml(q.deliverable)}</div>
+    </div>
+
+    <div class="editor-container" ${isSubmitted ? 'style="opacity:0.7"' : ''}>
+      <div class="editor-topbar">
+        <div class="editor-dot ed1"></div>
+        <div class="editor-dot ed2"></div>
+        <div class="editor-dot ed3"></div>
+        <div class="editor-filename">solution_${q.num.toLowerCase()}.py</div>
+        <div class="editor-lang">PYTHON</div>
+      </div>
+      <textarea class="code-editor" id="codeEditor" spellcheck="false"
+        placeholder="# Write your solution here…"
+        ${isSubmitted ? 'readonly' : ''}>${escHtml(isSubmitted ? JSON.parse(existingSub.value).code : existingCode)}</textarea>
+    </div>
+
+    <div class="submit-row">
+      ${!isSubmitted ? `
+        <button class="submit-btn" onclick="submitCode(${idx})">
+          🚀 Submit
+        </button>
+        <button class="save-draft-btn" onclick="saveDraft(${idx})">
+          💾 Save Draft
+        </button>
+      ` : `
+        <button class="save-draft-btn" onclick="clearSubmission(${idx})">
+          ✏️ Edit Submission
+        </button>
+      `}
+      ${subMeta}
+    </div>
+
+    <div class="nav-row">
+      <button class="nav-btn" onclick="renderQ(${idx-1})" ${idx===0?'disabled':''}>
+        ← Prev
+      </button>
+      <div class="nav-counter">${idx+1} / ${Q.length}</div>
+      ${idx === Q.length-1
+        ? `<button class="nav-btn submit-all-btn" onclick="submitAll()">✅ Submit All</button>`
+        : `<button class="nav-btn next-q" onclick="renderQ(${idx+1})">Next →</button>`
+      }
+    </div>
+  `;
+
+  // Autosave on type
+  const editor = document.getElementById('codeEditor');
+  if (editor && !isSubmitted) {
+    let timer;
+    editor.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => saveDraftSilent(idx), 1200);
+    });
+
+    // Tab key in editor
+    editor.addEventListener('keydown', e => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const s = editor.selectionStart, en = editor.selectionEnd;
+        editor.value = editor.value.slice(0,s) + '    ' + editor.value.slice(en);
+        editor.selectionStart = editor.selectionEnd = s + 4;
+      }
+    });
+  }
+
+  buildProgressBar();
+  updateStatuses();
+
+  // Scroll top
+  document.getElementById('mainContent').scrollTo({top:0});
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ════════════════════════════════════════
+   SUBMIT / DRAFT
+════════════════════════════════════════ */
+async function submitCode(idx) {
+  const editor = document.getElementById('codeEditor');
+  const code = editor ? editor.value.trim() : '';
+  if (!code) {
+    showToast('Write some code first!', 'amber');
+    return;
+  }
+
+  const btn = document.querySelector('.submit-btn');
+  if (btn) { btn.textContent = 'Submitting…'; btn.disabled = true; }
+
+  const payload = JSON.stringify({
+    code,
+    name: currentUser,
+    q: Q[idx].num,
+    qTitle: Q[idx].title,
+    ts: Date.now(),
+    marks: Q[idx].marks
+  });
+
+  const subKey = `sub:${currentUser}:q${idx}`;
+  const ok = await storageSet(subKey, payload);
+
+  if (ok) {
+    // Remove draft
+    delete drafts[idx];
+    await storageDel(`draft:${currentUser}:q${idx}`);
+    showToast('✓ Submitted!', 'teal');
+    await renderQ(idx);
+  } else {
+    showToast('Save failed — try again', 'amber');
+    if (btn) { btn.textContent = '🚀 Submit'; btn.disabled = false; }
+  }
+}
+
+async function saveDraft(idx) {
+  const code = document.getElementById('codeEditor')?.value || '';
+  drafts[idx] = code;
+  lsSet(`draft:${currentUser}:q${idx}`, code);
+  showToast('Draft saved', 'amber');
+  updateStatuses();
+  buildProgressBar();
+}
+
+async function saveDraftSilent(idx) {
+  const code = document.getElementById('codeEditor')?.value || '';
+  if (!code) return;
+  drafts[idx] = code;
+  lsSet(`draft:${currentUser}:q${idx}`, code);
+  const st = document.getElementById('statusText');
+  if (st) { st.textContent = 'Draft autosaved'; st.className = 'submit-status'; }
+  updateStatuses();
+}
+
+async function clearSubmission(idx) {
+  if (!confirm('Remove submission and edit?')) return;
+  const key = `sub:${currentUser}:q${idx}`;
+  lsDel(key);
+  await storageDel(key);
+  await renderQ(idx);
+  updateStatuses();
+  buildProgressBar();
+}
+
+/* ════════════════════════════════════════
+   SUBMISSIONS PANEL
+════════════════════════════════════════ */
+let panelFilterQ = 'all';
+let panelFilterUser = 'all';
+
+async function openPanel() {
+  document.getElementById('submissions-panel').classList.add('show');
+  await loadPanel();
+}
+
+function closePanel() {
+  document.getElementById('submissions-panel').classList.remove('show');
+}
+
+function panelBgClick(e) {
+  if (e.target === document.getElementById('submissions-panel')) closePanel();
+}
+
+async function loadPanel() {
+  document.getElementById('panelBody').innerHTML = `
+    <div class="empty-state"><div class="empty-icon" style="font-size:28px;animation:orbBreath 1s infinite alternate">⏳</div>Loading submissions…</div>`;
+
+  const submissions = [];
+
+  // ── Pull from Firebase (all users' data) ──────────────────
+  if (isOnline && window._fbReady) {
+    try {
+      const { db, ref, get } = window._fb;
+      const snap = await get(ref(db, '/'));
+      if (snap.exists()) {
+        const all = snap.val() || {};
+        for (const [rawKey, rawVal] of Object.entries(all)) {
+          // Firebase key: sub_username_qi  →  original: sub:username:qi
+          const key = rawKey.replace(/_/g, ':');
+          if (!key.startsWith('sub:')) continue;
+          try {
+            const val = typeof rawVal === 'string' ? rawVal : JSON.stringify(rawVal);
+            const d = JSON.parse(val);
+            submissions.push({ key, ...d });
+            lsSet(key, val);  // cache locally
+          } catch {}
+        }
+      }
+    } catch (e) {
+      showToast('Could not reach server — showing local data', 'amber');
+    }
+  }
+
+  // ── If offline or Firebase returned nothing, fall back to localStorage ──
+  if (!submissions.length) {
+    const localKeys = lsKeys('sub:');
+    for (const key of localKeys) {
+      const val = lsGet(key);
+      if (!val) continue;
+      try {
+        const d = JSON.parse(val);
+        submissions.push({ key, ...d });
+      } catch {}
+    }
+  }
+
+  // Sort by timestamp desc
+  submissions.sort((a,b) => b.ts - a.ts);
+
+  // Build filters
+  const users = [...new Set(submissions.map(s => s.name))];
+  const qs = [...new Set(submissions.map(s => s.q))].sort();
+
+  const filtersHtml = `
+    <div class="filter-chip ${panelFilterQ==='all'?'sel':''}" onclick="filterPanel('all','q')">All Questions</div>
+    ${qs.map(q => `<div class="filter-chip ${panelFilterQ===q?'sel':''}" onclick="filterPanel('${q}','q')">${q}</div>`).join('')}
+    <div style="flex:1"></div>
+    <div class="filter-chip ${panelFilterUser==='all'?'sel':''}" onclick="filterPanel('all','user')">All Users</div>
+    ${users.map(u => `<div class="filter-chip ${panelFilterUser===u?'sel':''}" onclick="filterPanel('${escHtml(u)}','user')">${escHtml(u)}</div>`).join('')}
+  `;
+  document.getElementById('panelFilters').innerHTML = filtersHtml;
+
+  // Filter
+  const filtered = submissions.filter(s =>
+    (panelFilterQ === 'all' || s.q === panelFilterQ) &&
+    (panelFilterUser === 'all' || s.name === panelFilterUser)
+  );
+
+  if (!filtered.length) {
+    document.getElementById('panelBody').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">📭</div>
+        No submissions yet. Be the first!
+      </div>`;
+    return;
+  }
+
+  document.getElementById('panelBody').innerHTML = filtered.map((s, i) => `
+    <div class="sub-card" id="sc-${i}">
+      <div class="sub-card-header" onclick="toggleSubCard(${i})">
+        <div class="sub-avatar">${s.name.charAt(0).toUpperCase()}</div>
+        <div class="sub-meta">
+          <div class="sub-name">${escHtml(s.name)}</div>
+          <div class="sub-info">${formatTime(s.ts)} &nbsp;·&nbsp; ${s.marks} marks</div>
+        </div>
+        <div class="sub-q-badge">${s.q}</div>
+        <div class="sub-expand">⌄</div>
+      </div>
+      <div class="sub-code-wrap">
+        <div class="sub-code">${escCode(s.code || '')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterPanel(val, type) {
+  if (type === 'q') panelFilterQ = val;
+  else panelFilterUser = val;
+  loadPanel();
+}
+
+function toggleSubCard(i) {
+  document.getElementById('sc-'+i).classList.toggle('open');
+}
+
+/* ════════════════════════════════════════
+   LOGOUT
+════════════════════════════════════════ */
+function logout() {
+  if (!confirm('Switch user?')) return;
+  currentUser = '';
+  drafts = {};
+  document.getElementById('app').classList.remove('show');
+  document.getElementById('login-screen').classList.add('show');
+  document.getElementById('nameInput').value = '';
+  document.getElementById('nameInput').focus();
+  showLogin();
+}
+
+/* ════════════════════════════════════════
+   SUBMIT ALL
+════════════════════════════════════════ */
+async function submitAll() {
+  // Count submitted questions
+  let submittedCount = 0;
+  const notSubmitted = [];
+  for (let i = 0; i < Q.length; i++) {
+    const subKey = `sub:${currentUser}:q${i}`;
+    const r = lsGet(subKey);
+    if (r) {
+      submittedCount++;
+    } else {
+      notSubmitted.push(`Q${i+1}`);
+    }
+  }
+
+  if (submittedCount === 0) {
+    showToast('No questions submitted yet!', 'amber');
+    return;
+  }
+
+  if (notSubmitted.length > 0) {
+    const proceed = confirm(
+      `You have submitted ${submittedCount}/${Q.length} questions.\n` +
+      `Not yet submitted: ${notSubmitted.join(', ')}\n\n` +
+      `Do you want to finalize and submit all answered questions?`
+    );
+    if (!proceed) return;
+  } else {
+    const proceed = confirm(
+      `All ${Q.length} questions are submitted!\n\nClick OK to finalize your assignment.`
+    );
+    if (!proceed) return;
+  }
+
+  // Mark assignment as finalized
+  const finalPayload = JSON.stringify({
+    name: currentUser,
+    ts: Date.now(),
+    submitted: submittedCount,
+    total: Q.length
+  });
+  await storageSet(`final:${currentUser}`, finalPayload);
+
+  showToast(`🎉 Assignment submitted! (${submittedCount}/${Q.length} questions)`, 'teal');
+
+  // Show a summary overlay
+  const mc = document.getElementById('mainContent');
+  mc.innerHTML = `
+    <div style="text-align:center;padding:60px 24px;animation:contentIn 0.4s ease forwards;">
+      <div style="font-size:64px;margin-bottom:20px;">🎓</div>
+      <div style="font-size:28px;font-weight:800;color:var(--text);margin-bottom:10px;letter-spacing:-0.02em;">Assignment Submitted!</div>
+      <div style="font-size:15px;color:var(--text2);margin-bottom:32px;">
+        <span style="color:var(--teal);font-weight:700;">${submittedCount}</span> of <span style="font-weight:700;">${Q.length}</span> questions submitted by <span style="color:var(--purple3);font-weight:700;">${escHtml(currentUser)}</span>
+      </div>
+      <div style="display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:32px;">
+        ${Q.map((_,i) => `
+          <div id="final-badge-${i}" style="width:44px;height:44px;border-radius:50%;background:var(--surface3);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--text3);">Q${i+1}</div>
+        `).join('')}
+      </div>
+      <button onclick="renderQ(0)" style="padding:12px 28px;background:var(--purple2);border:none;border-radius:var(--r);color:#fff;font-family:var(--font-display);font-size:15px;font-weight:700;cursor:pointer;letter-spacing:0.03em;box-shadow:0 4px 24px rgba(83,74,183,0.4);">
+        ← Review Answers
+      </button>
+    </div>
+  `;
+
+  // Colour badges based on submission status
+  for (let i = 0; i < Q.length; i++) {
+    const subKey = `sub:${currentUser}:q${i}`;
+    const r = lsGet(subKey);
+    const badge = document.getElementById(`final-badge-${i}`);
+    if (badge) {
+      if (r) {
+        badge.style.background = 'rgba(0,212,170,0.15)';
+        badge.style.borderColor = 'var(--teal)';
+        badge.style.color = 'var(--teal)';
+        badge.style.boxShadow = '0 0 8px rgba(0,212,170,0.4)';
+      } else {
+        badge.style.background = 'var(--red-dim)';
+        badge.style.borderColor = 'var(--red)';
+        badge.style.color = 'var(--red)';
+      }
+    }
+  }
+}
+
+/* ════════════════════════════════════════
+   UTILS
+════════════════════════════════════════ */
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escCode(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function formatTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-IN', {day:'numeric',month:'short'}) +
+    ' ' + d.toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'});
+}
+
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = ''; }, 2600);
+}
+</script>
+</body>
+</html>
